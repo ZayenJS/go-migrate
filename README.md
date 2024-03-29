@@ -7,7 +7,7 @@ This is a simple tool to manage your database migrations. It is written in Go an
 To install the tool, you can use the following command:
 
 ```bash
-go get github.com/zayenjs/go-migrate
+go get github.com/ZayenJS/go-migrate
 ```
 
 ## Usage

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/zayenjs/go-migrate/cli"
+	"github.com/ZayenJS/go-migrate/cli"
 )
 
 func main() {

@@ -6,9 +6,9 @@ import (
 	"path"
 	"regexp"
 
+	"github.com/ZayenJS/go-migrate/database"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
-	"github.com/zayenjs/go-migrate/database"
 )
 
 func GetDatabaseURLFromEnvFile(currentWorkingDirectory string) string {

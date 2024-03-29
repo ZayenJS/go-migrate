@@ -1,4 +1,4 @@
-module github.com/zayenjs/go-migrate
+module github.com/ZayenJS/go-migrate
 
 go 1.22.0
 

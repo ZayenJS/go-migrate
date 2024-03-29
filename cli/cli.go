@@ -8,11 +8,11 @@ import (
 	"path"
 	"time"
 
-	"github.com/zayenjs/go-migrate/config"
-	"github.com/zayenjs/go-migrate/database"
-	"github.com/zayenjs/go-migrate/filesystem"
-	migration "github.com/zayenjs/go-migrate/models"
-	"github.com/zayenjs/go-migrate/util"
+	"github.com/ZayenJS/go-migrate/config"
+	"github.com/ZayenJS/go-migrate/database"
+	"github.com/ZayenJS/go-migrate/filesystem"
+	migration "github.com/ZayenJS/go-migrate/models"
+	"github.com/ZayenJS/go-migrate/util"
 )
 
 type CLI struct{}

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/zayenjs/go-migrate/database"
+	"github.com/ZayenJS/go-migrate/database"
 )
 
 type Migration struct {
