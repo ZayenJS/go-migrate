@@ -25,3 +25,4 @@ go-migrate.config.json
 migrations
 docker-compose*
 Dockerfile
+go-migrate
