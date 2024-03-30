@@ -37,6 +37,9 @@ func Setup() {
 		fmt.Println("Migrate database using SQL files in migrations directory")
 		fmt.Println("Commands:")
 		fmt.Println("init - Initialize migrations directory, create .env file with DATABASE_URL and config file with directory path")
+		fmt.Println("create [name] - Create new migration with name")
+		fmt.Println("migrate - Run all pending migrations")
+		fmt.Println("rollback [steps] - Rollback last migration or [steps] migrations")
 		fmt.Println("Options:")
 		fmt.Println("  -h, --help: Show help message")
 
