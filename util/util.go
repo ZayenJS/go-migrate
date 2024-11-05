@@ -30,7 +30,7 @@ func GetDatabaseURLFromEnvFile(currentWorkingDirectory string) string {
 	matches := regexp.FindStringSubmatch(string(dotEnvFileContent))
 
 	if len(matches) < 1 {
-		fmt.Println("Error reading database URL from .env file. Make sure it is in the format DATABASE_URL=<dialect>://<username>:<password>@<host>:<port>/<database>")
+		fmt.Println("Error reading database URL from .env file. Make sure it is in the format GO_MIGRATE_DATABASE_URL=<dialect>://<username>:<password>@<host>:<port>/<database>")
 		os.Exit(1)
 	}
 

@@ -29,7 +29,7 @@ The configuration file is a simple JSON file that contains the following fields:
 
 ```json
 {
-  "directoryPath": "/home/xxx/xxx/migrations"
+    "directoryPath": "/home/xxx/xxx/migrations"
 }
 ```
 
@@ -41,12 +41,12 @@ The `directoryPath` field is the path to the directory where the migration files
 
 The `init` command will create the following:
 
-- The configuration file.
-- The migrations directory.
-- The migrations table in the database.
-- The .env file (if it does not exist).
+-   The configuration file.
+-   The migrations directory.
+-   The migrations table in the database.
+-   The .env file (if it does not exist).
 
-> The .env file is used to store the database connection string. The file should have a `DATABASE_URL` field that contains the connection string otherwise the tool will not work.
+> The .env file is used to store the database connection string. The file should have a `GO_MIGRATE_DATABASE_URL` field that contains the connection string otherwise the tool will not work.
 
 ### Create
 

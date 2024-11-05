@@ -36,7 +36,7 @@ func Setup() {
 		fmt.Println("Usage: go-migrate [command]")
 		fmt.Println("Migrate database using SQL files in migrations directory")
 		fmt.Println("Commands:")
-		fmt.Println("init - Initialize migrations directory, create .env file with DATABASE_URL and config file with directory path")
+		fmt.Println("init - Initialize migrations directory, create .env file with GO_MIGRATE_DATABASE_URL and config file with directory path")
 		fmt.Println("create [name] - Create new migration with name")
 		fmt.Println("migrate - Run all pending migrations")
 		fmt.Println("rollback [steps] - Rollback last migration or [steps] migrations")
@@ -55,7 +55,7 @@ func Init() {
 	filesystem.CreateDirectoryIfNotExist(absoluteDirectoryPath)
 
 	envFilePath := path.Join(currentWorkingDirectory, ".env")
-	filesystem.CreateFileIfNotExist(envFilePath, "DATABASE_URL=<dialect>://<username>:<password>@<host>:<port>/<database>")
+	filesystem.CreateFileIfNotExist(envFilePath, "GO_MIGRATE_DATABASE_URL=<dialect>://<username>:<password>@<host>:<port>/<database>")
 
 	configFilePath := path.Join(currentWorkingDirectory, configuration.GetConfigFileName())
 	filesystem.CreateFileIfNotExist(configFilePath, fmt.Sprintf("{\"directoryPath\": \"%v\"}", absoluteDirectoryPath))
