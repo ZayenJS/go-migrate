@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -29,7 +30,8 @@ func Get() *DataBase {
 }
 
 func Connect(databaseURL string) *DataBase {
-	dialect := strings.Split(databaseURL, "://")[0]
+	re := regexp.MustCompile(`(postgres|mysql)`)
+	dialect := re.FindString(databaseURL)
 
 	var db *sql.DB
 	var err error
@@ -37,7 +39,8 @@ func Connect(databaseURL string) *DataBase {
 	if dialect == "postgres" {
 		db, err = sql.Open(dialect, databaseURL)
 	} else if dialect == "mysql" {
-		db, err = sql.Open(dialect, strings.Split(databaseURL, "://")[1])
+		dsn := strings.Replace(strings.Split(databaseURL, "://")[1], `"`, "", -1)
+		db, err = sql.Open(dialect, dsn)
 	} else {
 		fmt.Println("Invalid dialect")
 		os.Exit(1)
