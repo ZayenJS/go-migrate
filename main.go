@@ -13,6 +13,12 @@ func main() {
 	cli.Setup()
 
 	args := flag.Args()
+
+	if len(args) < 1 {
+		flag.Usage()
+		return
+	}
+
 	for _, arg := range args {
 		switch arg {
 		case cli.Commands.Init:
