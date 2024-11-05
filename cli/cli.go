@@ -55,10 +55,10 @@ func Init() {
 	filesystem.CreateDirectoryIfNotExist(absoluteDirectoryPath)
 
 	envFilePath := path.Join(currentWorkingDirectory, ".env")
-	filesystem.CreateFileIfNotExist(envFilePath, "GO_MIGRATE_DATABASE_URL=<dialect>://<username>:<password>@<host>:<port>/<database>")
+	filesystem.CreateFileIfNotExist(envFilePath, "GO_MIGRATE_DATABASE_URL=<dialect>://<username>:<password>@<host>:<port>/<database>", os.O_APPEND|os.O_CREATE|os.O_WRONLY)
 
 	configFilePath := path.Join(currentWorkingDirectory, configuration.GetConfigFileName())
-	filesystem.CreateFileIfNotExist(configFilePath, fmt.Sprintf("{\"directoryPath\": \"%v\"}", absoluteDirectoryPath))
+	filesystem.CreateFileIfNotExist(configFilePath, fmt.Sprintf("{\"directoryPath\": \"%v\"}", absoluteDirectoryPath), os.O_CREATE)
 
 	fmt.Println("Initialization complete")
 }
@@ -91,8 +91,8 @@ func Create() {
 
 	upFilePath := path.Join(migrationFilePath, "up.sql")
 	downFilePath := path.Join(migrationFilePath, "down.sql")
-	filesystem.CreateFileIfNotExist(upFilePath, "")
-	filesystem.CreateFileIfNotExist(downFilePath, "")
+	filesystem.CreateFileIfNotExist(upFilePath, "", os.O_CREATE)
+	filesystem.CreateFileIfNotExist(downFilePath, "", os.O_CREATE)
 
 	fmt.Println("Migration files created")
 }

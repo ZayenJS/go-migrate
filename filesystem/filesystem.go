@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"regexp"
 )
 
 func GetCurrentWorkingDirectory() string {
@@ -30,7 +31,7 @@ func CreateDirectoryIfNotExist(directoryPath string) {
 	}
 }
 
-func CreateFileIfNotExist(filePath string, content string) {
+func CreateFileIfNotExist(filePath string, content string, mode int) {
 	_, err := os.Stat(filePath)
 
 	if err != nil && os.IsNotExist(err) {
@@ -50,7 +51,37 @@ func CreateFileIfNotExist(filePath string, content string) {
 			fmt.Printf("Error writing to file %v\n", filePath)
 			os.Exit(1)
 		}
+
+		return
 	}
+
+	if err != nil {
+		fmt.Printf("Error checking file %v\n", filePath)
+		os.Exit(1)
+	}
+
+	file, err := os.OpenFile(filePath, mode, 0644)
+
+	if err != nil {
+		fmt.Printf("Error opening file %v\n", filePath)
+		os.Exit(1)
+	}
+
+	defer file.Close()
+
+	envFileContent := GetFileContent(filePath)
+
+	match, _ := regexp.MatchString(`GO_MIGRATE_DATABASE_URL=(postgres|mysql)://.*`, envFileContent)
+
+	if !match {
+		_, err := file.WriteString(content)
+
+		if err != nil {
+			fmt.Printf("Error writing to file %v\n", filePath)
+			os.Exit(1)
+		}
+	}
+
 }
 
 func GetFileContent(filePath string) string {
