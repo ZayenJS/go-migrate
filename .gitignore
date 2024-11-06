@@ -26,3 +26,5 @@ migrations
 docker-compose*
 Dockerfile
 go-migrate
+
+Makefile

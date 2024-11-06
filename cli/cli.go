@@ -124,12 +124,14 @@ func Migrate() {
 		}
 
 		migrationFilePath := path.Join(configuration.DirectoryPath, entryName, "up.sql")
-		sqlText := filesystem.GetFileContent(migrationFilePath)
+		sql := filesystem.GetFileContent(migrationFilePath)
 
 		fmt.Printf("Running migration file %v\n\n", entryName)
-		fmt.Println(string(sqlText))
+		time.Sleep(500 * time.Millisecond)
 
-		_, err := db.Engine.Exec(string(sqlText))
+		fmt.Println(sql)
+
+		err := executeStatements(db, sql)
 
 		if err != nil {
 			fmt.Printf("Error running migration file %v:\n%v\n\n", file.Name(), err)
@@ -138,9 +140,11 @@ func Migrate() {
 
 		migration.Insert(entryName)
 
-		fmt.Println("Migration complete")
+		fmt.Println("\033[32mMigration complete\033[0m")
 		fmt.Print("\n")
 		migrationApplied++
+
+		time.Sleep(500 * time.Millisecond)
 	}
 
 	if migrationApplied == 0 {
@@ -168,6 +172,13 @@ func Rollback(steps int64) {
 		steps = 1
 	}
 
+	err := executeStatements(db, sql)
+
+	if err != nil {
+		fmt.Printf("Error rolling back migration: %v\n", err)
+		os.Exit(1)
+	}
+
 	rows, err := db.Engine.Query(sql, steps)
 
 	if err != nil {
@@ -193,6 +204,11 @@ func Rollback(steps int64) {
 		migrationsToRollback = append(migrationsToRollback, migration.Name)
 	}
 
+	if len(migrationsToRollback) == 0 {
+		fmt.Println("Nothing to rollback")
+		os.Exit(0)
+	}
+
 	text := "Rolling back %v migration"
 
 	if len(migrationsToRollback) > 1 {
@@ -210,7 +226,8 @@ func Rollback(steps int64) {
 	rolledBackMigrations := 0
 
 	for _, migrationName := range migrationsToRollback {
-		fmt.Printf("Rolling back migration %v\n", migrationName)
+		fmt.Printf("\nRolling back migration %v\n", migrationName)
+		time.Sleep(500 * time.Millisecond)
 
 		for _, file := range migrationDirectoryContent {
 			if file.Name() != migrationName {
@@ -218,11 +235,25 @@ func Rollback(steps int64) {
 			}
 
 			migrationFilePath := path.Join(configuration.DirectoryPath, migrationName, "down.sql")
-			sqlText := filesystem.GetFileContent(migrationFilePath)
+			sql := filesystem.GetFileContent(migrationFilePath)
 
-			fmt.Println(string(sqlText))
+			if sql == "" {
+				fmt.Printf("\033[33mThe down.sql file for migration %v is either empty or missing\033[0m\n", migrationName)
 
-			_, err := db.Engine.Exec(string(sqlText))
+				migration.Delete(migrationName)
+
+				if steps > 1 {
+					fmt.Println("Continuing to next migration")
+				} else {
+					fmt.Println("\033[32mRollback complete\033[0m")
+				}
+
+				continue
+			}
+
+			fmt.Println(sql)
+
+			executeStatements(db, sql)
 
 			if err != nil {
 				fmt.Printf("Error rolling back migration file %v:\n%v\n\n", migrationName, err)
@@ -231,9 +262,11 @@ func Rollback(steps int64) {
 
 			migration.Delete(migrationName)
 
-			fmt.Println("Migration rolled back")
+			fmt.Println("\033[32mMigration rolled back\033[0m")
 			fmt.Print("\n")
 			rolledBackMigrations++
+
+			time.Sleep(500 * time.Millisecond)
 		}
 	}
 
@@ -244,6 +277,40 @@ func Rollback(steps int64) {
 			text += "s"
 		}
 
+		text += "\n"
+
 		fmt.Printf(text, rolledBackMigrations)
 	}
+}
+
+func executeStatements(db *database.DataBase, sql string) error {
+	sqlStmt := sql
+	// Get each statement from the file
+	for {
+		// Find the next semicolon
+		end := 0
+		for i := 0; i < len(sqlStmt); i++ {
+			if sqlStmt[i] == ';' {
+				end = i
+				break
+			}
+		}
+
+		// If we didn't find a semicolon, we're done
+		if end == 0 {
+			break
+		}
+
+		// Execute the statement
+		_, err := db.Engine.Exec(sqlStmt[:end])
+
+		if err != nil {
+			return err
+		}
+
+		// Move to the next statement
+		sqlStmt = sqlStmt[end+1:]
+	}
+
+	return nil
 }
