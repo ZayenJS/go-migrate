@@ -20,7 +20,7 @@ func GetDatabaseURLFromEnvFile(currentWorkingDirectory string) string {
 		os.Exit(1)
 	}
 
-	pattern := `GO_MIGRATE_DATABASE_URL="(mysql|postgres):\/\/([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)@(tcp\()?([A-Za-z]+|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})):\d+\)?\/\w+"`
+	pattern := `GO_MIGRATE_DATABASE_URL="(mysql|postgres):\/\/([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)@(tcp\()?([A-Za-z]+|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})):\d+\)?\/\w+.*?"`
 	re := regexp.MustCompile(pattern)
 
 	if err != nil {
@@ -66,4 +66,8 @@ func GetInsertMigrationPreparedQuery() string {
 	}
 
 	return "INSERT INTO migrations (name) VALUES (?)"
+}
+
+func RemoveNewLine(input string) string {
+	return regexp.MustCompile(`\r?\n`).ReplaceAllString(input, "")
 }

@@ -6,6 +6,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type DataBase struct {
@@ -41,6 +43,7 @@ func Connect(databaseURL string) *DataBase {
 	} else if dialect == "mysql" {
 		dsn := strings.Replace(strings.Split(databaseURL, "://")[1], `"`, "", -1)
 		db, err = sql.Open(dialect, dsn)
+
 	} else {
 		fmt.Println("Invalid dialect")
 		os.Exit(1)

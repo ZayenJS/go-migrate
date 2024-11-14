@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -55,7 +56,7 @@ func Init() {
 	filesystem.CreateDirectoryIfNotExist(absoluteDirectoryPath)
 
 	envFilePath := path.Join(currentWorkingDirectory, ".env")
-	filesystem.CreateFileIfNotExist(envFilePath, "GO_MIGRATE_DATABASE_URL=<dialect>://<username>:<password>@<host>:<port>/<database>", os.O_APPEND|os.O_CREATE|os.O_WRONLY)
+	filesystem.CreateFileIfNotExist(envFilePath, "GO_MIGRATE_DATABASE_URL=<dialect>://<username>:<password>@<host>:<port>/<database>?multiStatements=true", os.O_APPEND|os.O_CREATE|os.O_WRONLY)
 
 	configFilePath := path.Join(currentWorkingDirectory, configuration.GetConfigFileName())
 	filesystem.CreateFileIfNotExist(configFilePath, fmt.Sprintf("{\"directoryPath\": \"%v\"}", absoluteDirectoryPath), os.O_CREATE)
@@ -124,19 +125,21 @@ func Migrate() {
 		}
 
 		migrationFilePath := path.Join(configuration.DirectoryPath, entryName, "up.sql")
-		sql := filesystem.GetFileContent(migrationFilePath)
+		sqlText := filesystem.GetFileContent(migrationFilePath)
 
 		fmt.Printf("Running migration file %v\n\n", entryName)
 		time.Sleep(500 * time.Millisecond)
 
-		fmt.Println(sql)
+		fmt.Println(sqlText)
 
-		err := executeStatements(db, sql)
+		executeInTransaction(db, func(tx *sql.Tx) {
+			_, err := tx.Exec(sqlText)
 
-		if err != nil {
-			fmt.Printf("Error running migration file %v:\n%v\n\n", file.Name(), err)
-			os.Exit(1)
-		}
+			if err != nil {
+				fmt.Printf("\n\033[31mError running migration file %v:\n\033[0m\n%v\n\n", file.Name(), err)
+				os.Exit(1)
+			}
+		})
 
 		migration.Insert(entryName)
 
@@ -161,9 +164,9 @@ func Rollback(steps int64) {
 	databaseURL := util.GetDatabaseURLFromEnvFile(currentWorkingDirectory)
 	db := database.Connect(databaseURL)
 
-	sql := "SELECT * FROM migrations ORDER BY id DESC LIMIT ?"
+	sqlText := "SELECT * FROM migrations ORDER BY id DESC LIMIT ?"
 	if db.Dialect == database.Dialect.Postgres {
-		sql = "SELECT * FROM migrations ORDER BY id DESC LIMIT $1"
+		sqlText = "SELECT * FROM migrations ORDER BY id DESC LIMIT $1"
 	}
 
 	defer db.Engine.Close()
@@ -172,14 +175,7 @@ func Rollback(steps int64) {
 		steps = 1
 	}
 
-	err := executeStatements(db, sql)
-
-	if err != nil {
-		fmt.Printf("Error rolling back migration: %v\n", err)
-		os.Exit(1)
-	}
-
-	rows, err := db.Engine.Query(sql, steps)
+	rows, err := db.Engine.Query(sqlText, steps)
 
 	if err != nil {
 		fmt.Printf("Error rolling back migration: %v\n", err)
@@ -235,9 +231,9 @@ func Rollback(steps int64) {
 			}
 
 			migrationFilePath := path.Join(configuration.DirectoryPath, migrationName, "down.sql")
-			sql := filesystem.GetFileContent(migrationFilePath)
+			sqlText := filesystem.GetFileContent(migrationFilePath)
 
-			if sql == "" {
+			if sqlText == "" {
 				fmt.Printf("\033[33mThe down.sql file for migration %v is either empty or missing\033[0m\n", migrationName)
 
 				migration.Delete(migrationName)
@@ -251,23 +247,25 @@ func Rollback(steps int64) {
 				continue
 			}
 
-			fmt.Println(sql)
+			fmt.Println(sqlText)
 
-			executeStatements(db, sql)
+			executeInTransaction(db, func(tx *sql.Tx) {
+				_, err := tx.Exec(sqlText)
 
-			if err != nil {
-				fmt.Printf("Error rolling back migration file %v:\n%v\n\n", migrationName, err)
-				os.Exit(1)
-			}
-
-			migration.Delete(migrationName)
-
-			fmt.Println("\033[32mMigration rolled back\033[0m")
-			fmt.Print("\n")
-			rolledBackMigrations++
+				if err != nil {
+					fmt.Printf("Error rolling back migration file %v:\n%v\n\n", migrationName, err)
+					os.Exit(1)
+				}
+			})
 
 			time.Sleep(500 * time.Millisecond)
 		}
+
+		migration.Delete(migrationName)
+
+		fmt.Println("\033[32mMigration rolled back\033[0m")
+		fmt.Print("\n")
+		rolledBackMigrations++
 	}
 
 	if rolledBackMigrations > 0 {
@@ -283,34 +281,15 @@ func Rollback(steps int64) {
 	}
 }
 
-func executeStatements(db *database.DataBase, sql string) error {
-	sqlStmt := sql
-	// Get each statement from the file
-	for {
-		// Find the next semicolon
-		end := 0
-		for i := 0; i < len(sqlStmt); i++ {
-			if sqlStmt[i] == ';' {
-				end = i
-				break
-			}
-		}
+func executeInTransaction(db *database.DataBase, callback func(*sql.Tx)) {
+	tx, err := db.Engine.Begin()
 
-		// If we didn't find a semicolon, we're done
-		if end == 0 {
-			break
-		}
-
-		// Execute the statement
-		_, err := db.Engine.Exec(sqlStmt[:end])
-
-		if err != nil {
-			return err
-		}
-
-		// Move to the next statement
-		sqlStmt = sqlStmt[end+1:]
+	if err != nil {
+		fmt.Errorf("Error starting transaction: %v\n", err)
+		os.Exit(1)
 	}
 
-	return nil
+	defer tx.Rollback()
+	callback(tx)
+	tx.Commit()
 }
